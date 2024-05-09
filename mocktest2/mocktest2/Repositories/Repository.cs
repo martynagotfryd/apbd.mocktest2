@@ -99,4 +99,100 @@ public class Repository : IRepository
 
         return doctorDto;
     }
+
+    public async Task<PrescriptionMedDeleteDto?> DoesPrescriptionExist(int idDoctor)
+    {
+        var query = "SELECT p.IdPrescription AS IdPrescription FROM Prescription p WHERE p.IdDoctor = @IdDoctor";
+
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await using SqlCommand command = new SqlCommand();
+
+        command.Connection = connection;
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@IdDoctor", idDoctor);
+
+        await connection.OpenAsync();
+
+        var reader = await command.ExecuteReaderAsync();
+
+        var idPrescriptionOrdinal = reader.GetOrdinal("IdPrescription");
+
+        PrescriptionMedDeleteDto res = null;
+
+        while (await reader.ReadAsync())
+        {
+            if (res is not null)
+            {
+                res.PrescriptionMedDeleteDto2s.Add(new PrescriptionMedDeleteDto2()
+                {
+                    IdPrescription = reader.GetInt32(idPrescriptionOrdinal)
+                });
+            }
+            else
+            {
+                res = new PrescriptionMedDeleteDto()
+                {
+                    PrescriptionMedDeleteDto2s = new List<PrescriptionMedDeleteDto2>()
+                    {
+                        new PrescriptionMedDeleteDto2()
+                        {
+                            IdPrescription = reader.GetInt32(idPrescriptionOrdinal)
+                        }
+                    }
+                };
+            }
+        }
+        
+        return res != null ? (PrescriptionMedDeleteDto?)res : null;
+
+    }
+
+    public async Task DeleteDoctorInfo(int idDoctor)
+    {
+        var query = "DELETE FROM Doctor WHERE IdDoctor = @IdDoctor";
+
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await using SqlCommand command = new SqlCommand();
+
+        command.Connection = connection;
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@IdDoctor", idDoctor);
+
+        await connection.OpenAsync();
+
+        await command.ExecuteScalarAsync();
+    }
+
+    public async Task DeletePrescriptionInfo(int idDoctor)
+    {
+        var query = "DELETE FROM Prescription WHERE IdDoctor = @IdDoctor";
+
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await using SqlCommand command = new SqlCommand();
+
+        command.Connection = connection;
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@IdDoctor", idDoctor);
+
+        await connection.OpenAsync();
+
+        await command.ExecuteScalarAsync();
+    }
+
+    public async Task DeletePrescriptionMedInfo(int idPrescription)
+    {
+        var query = "DELETE FROM Prescription_Medicament WHERE IdPrescription = @IdPrescription";
+
+        await using SqlConnection connection = new SqlConnection(_configuration.GetConnectionString("Default"));
+        await using SqlCommand command = new SqlCommand();
+
+        command.Connection = connection;
+        command.CommandText = query;
+        command.Parameters.AddWithValue("@IdPrescription", idPrescription);
+
+        await connection.OpenAsync();
+
+        await command.ExecuteScalarAsync();
+        
+    }
 }
